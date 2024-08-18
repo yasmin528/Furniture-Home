@@ -30,7 +30,8 @@ class orderController extends Controller
 
             if($order) {
                     $order->update([
-                        'quantity' => $order->quantity + request('quantity')
+                        'quantity' => $order->quantity + request('quantity'),
+                        'total_price' => ($order->quantity+request('quantity')) * $product->price
                     ]);
             }else {
                 DB::table('orders')->insert([
