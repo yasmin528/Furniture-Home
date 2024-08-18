@@ -28,11 +28,13 @@
                     <ul class="navbar-nav me-auto">
 
                     </ul>
+                    @verified
                     <ul class="navbar-nav">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('order.index') }}">{{ __('My Cart') }}</a>
                         </li>
                     </ul>
+                    @endverified
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
                         <!-- Authentication Links -->
