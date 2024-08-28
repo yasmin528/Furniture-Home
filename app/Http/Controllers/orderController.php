@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,32 +20,29 @@ class orderController extends Controller
 
     public function store(Request $request)
     {
-        $product = DB::table('products')->where('id', request('product_id'))->first();
+        $product = Product::findOrFail(request('product_id'));
 
-        if($product) {
-            DB::table('products')
-                ->where('id', request('product_id'))
-                ->decrement('quantity', request('quantity'));
+        $product->decrement('quantity', request('quantity'));
 
-            $order = order::where('user_id' , Auth::id())->where('product_id' , request('product_id'))->first();
+        $order = Order::where('user_id', auth()->id())
+            ->where('product_id', $product->id)
+            ->first();
 
-            if($order) {
-                    $order->update([
-                        'quantity' => $order->quantity + request('quantity'),
-                        'total_price' => ($order->quantity+request('quantity')) * $product->price
-                    ]);
-            }else {
-                DB::table('orders')->insert([
-                    'product_id' => request('product_id'),
-                    'quantity' => request('quantity'),
-                    'user_id' => auth()->id(),
-                    'total_price' => request('quantity') * $product->price
-                ]);
-            }
-            return redirect()->route('home');
+        if ($order) {
+            $order->update([
+                'quantity' => $order->quantity + request('quantity'),
+                'total_price' => ($order->quantity + request('quantity')) * $product->price,
+            ]);
+        } else {
+            Order::create([
+                'product_id' => $product->id,
+                'quantity' => request('quantity'),
+                'user_id' => auth()->id(),
+                'total_price' => request('quantity') * $product->price,
+            ]);
         }
 
-        return view('not_found');
+        return redirect()->route('home');
     }
 
     public function update(Request $request, string $id)
@@ -64,15 +62,13 @@ class orderController extends Controller
     }
     public function destroy(string $id)
     {
-        $order = order::where('id', $id)->first();
+        $order = Order::findOrFail($id);
 
-        if($order) {
-            DB::table('products')
-                ->where('id', $order->product_id)
-                ->increment('quantity', $order->quantity);
-            $order->delete();
-            return redirect('order');
-        }
-        return view('not_found');
+        $product = Product::findOrFail($order->product_id);
+        $product->increment('quantity', $order->quantity);
+
+        $order->delete();
+
+        return redirect('order');
     }
 }
